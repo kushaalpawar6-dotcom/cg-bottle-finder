@@ -30,6 +30,7 @@ footer{border-top:1px solid #ffffff17;padding:24px 0 32px;color:#969184;font-siz
 let products=[],cats=["All"],category="All",chosen=null,chosenSize="",liveCatalogue=false,stockData={items:[],status:"loading",checked_at:null},locationData={districts:[],shops:[]};
 const $=id=>document.getElementById(id),catalog=$("catalog");
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function imageFallback(img){const d=document.createElement("div");d.className="bottle";d.dataset.label=(img.alt||"Bottle").replace(/ bottle$/i,"").toUpperCase();img.replaceWith(d)}
 function qtyPositive(x){const n=Number(String(x.quantity??"").replace(/,/g,"").trim());return Number.isFinite(n)&&n>0}
 function districtStockItems(){return stockData.items.filter(x=>x.shop_district_name===$("district").value&&qtyPositive(x))}
 function norm(v){return String(v??"").trim().toLowerCase().replace(/\s+/g,"")}
@@ -41,7 +42,7 @@ function render(){
  const list=available.filter(p=>(category==="All"||p.cat===category)&&p.name.toLowerCase().includes(q));
  $("heading").textContent=category==="All"?"Available brands":category;
  $("count").textContent=stockData.status==="success"?list.length+" brands with stock":"Stock not verified";
- catalog.innerHTML=list.length?list.map(p=>{const sizes=p.sizes.filter(s=>selectedAreaStockItems().some(x=>String(x.brand_id)===String(p.id)&&norm(x.bottle_size_label)===norm(typeof s==="string"?s:s.label)));return '<button class="card" data-id="'+esc(p.id)+'" data-tone="'+esc(p.tone||"amber")+'"><div class="visual">'+(p.image_url?'<img class="product-image" src="'+esc(p.image_url)+'" alt="'+esc(p.name)+' bottle" loading="lazy" onerror="this.style.display=\'none\'">':'<div class="bottle" data-label="'+esc(p.name.toUpperCase())+'"></div>')+'</div><div class="info"><small>'+esc(p.cat)+'</small><h3>'+esc(p.name)+'</h3><p>'+sizes.map(s=>esc(typeof s==="string"?s:s.label)).join(" · ")+'</p></div></button>'}).join(""):'<div class="empty">'+(stockData.status==="success"?'Is selected area mein abhi kisi brand ka verified positive stock nahi mila.':'Official stock abhi verify nahi ho pa raha. Please thodi der baad refresh karein.')+'</div>';
+ catalog.innerHTML=list.length?list.map(p=>{const sizes=p.sizes.filter(s=>selectedAreaStockItems().some(x=>String(x.brand_id)===String(p.id)&&norm(x.bottle_size_label)===norm(typeof s==="string"?s:s.label)));return '<button class="card" data-id="'+esc(p.id)+'" data-tone="'+esc(p.tone||"amber")+'"><div class="visual">'+(p.image_url?'<img class="product-image" src="'+esc(p.image_url)+'" alt="'+esc(p.name)+' bottle" loading="lazy" onerror="imageFallback(this)">':'<div class="bottle" data-label="'+esc(p.name.toUpperCase())+'"></div>')+'</div><div class="info"><small>'+esc(p.cat)+'</small><h3>'+esc(p.name)+'</h3><p>'+sizes.map(s=>esc(typeof s==="string"?s:s.label)).join(" · ")+'</p></div></button>'}).join(""):'<div class="empty">'+(stockData.status==="success"?'Is selected area mein abhi kisi brand ka verified positive stock nahi mila.':'Official stock abhi verify nahi ho pa raha. Please thodi der baad refresh karein.')+'</div>';
 }
 function showDetail(){
  if(!chosen)return;
