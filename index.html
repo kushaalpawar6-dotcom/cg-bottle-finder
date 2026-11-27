@@ -47,19 +47,19 @@ function render(){
  const q=$("search").value.trim().toLowerCase();
  const list=products.filter(p=>(category==="All"||p.cat===category)&&p.name.toLowerCase().includes(q));
  $("heading").textContent=category==="All"?"Popular picks":category;
- $("count").textContent=list.length+(liveCatalogue?" verified brands":" demo brands");
- catalog.innerHTML=list.length?list.map(p=>'<button class="card" data-id="'+esc(p.id||p.name)+'" data-tone="'+esc(p.tone||"amber")+'"><div class="visual"><div class="bottle" data-label="'+esc(p.name.toUpperCase())+'"></div></div><div class="info"><small>'+esc(p.cat)+'</small><h3>'+esc(p.name)+'</h3><p>'+p.sizes.map(esc).join(" · ")+'</p></div></button>').join(""):'<div class="empty">No matching brands. Try another search.</div>';
+ $("count").textContent=list.length+(liveCatalogue?" verified labels":" demo brands");
+ catalog.innerHTML=list.length?list.map(p=>'<button class="card" data-id="'+esc(p.id||p.name)+'" data-tone="'+esc(p.tone||"amber")+'"><div class="visual"><div class="bottle" data-label="'+esc(p.name.toUpperCase())+'"></div></div><div class="info"><small>'+esc(p.cat)+'</small><h3>'+esc(p.name)+'</h3><p>'+p.sizes.map(s=>esc(typeof s==="string"?s:s.label)).join(" · ")+'</p></div></button>').join(""):'<div class="empty">No matching brands. Try another search.</div>';
 }
 function showDetail(){
  if(!chosen)return;
  $("detail").classList.add("show");
  $("picked").textContent=chosen.name;
  $("context").textContent=chosen.cat+" · "+$("area").value+", "+$("district").value;
- $("sizes").innerHTML=chosen.sizes.length?chosen.sizes.map(s=>'<button class="size '+(chosenSize===s?'active':'')+'" data-size="'+esc(s)+'">'+esc(s)+'</button>').join(""):'<span class="status">Verified pack-size data is not available for this brand yet.</span>';
+ $("sizes").innerHTML=chosen.sizes.length?chosen.sizes.map(s=>{const label=typeof s==="string"?s:s.label;const price=typeof s==="string"?null:s.rsp;return '<button class="size '+(chosenSize===label?'active':'')+'" data-size="'+esc(label)+'">'+esc(label)+(price!=null?' · ₹'+esc(price):'')+'</button>'}).join(""):'<span class="status">Verified pack-size data is not available for this brand yet.</span>';
  if(!chosenSize){$("stockStatus").innerHTML="<strong>Choose a pack size.</strong><br>Shop listings appear only when a matching official stock record exists.";return}
  if(!liveCatalogue||stockData.status!=="success"){$("stockStatus").innerHTML="<strong>Live shop stock is not connected yet.</strong><br>No shop availability is being claimed. Official stock feed is still awaiting verification.";return}
  const matches=stockData.items.filter(x=>String(x.brand_id)===String(chosen.id)&&x.bottle_size_label===chosenSize&&(!$("area").value||!x.shop_area||x.shop_area.toLowerCase().includes($("area").value.toLowerCase())));
- const stamp=stockData.checked_at?new Date(stockData.checked_at).toLocaleString("en-IN"):"time unavailable";
+ const stamp=stockData.source_updated_label||(stockData.checked_at?new Date(stockData.checked_at).toLocaleString("en-IN"):"time unavailable");
  if(!matches.length){$("stockStatus").innerHTML="<strong>No matching shop stock record was returned.</strong><br>Last official check: "+esc(stamp)+". This does not guarantee the shop is out of stock; confirm with the retailer.";return}
  $("stockStatus").innerHTML="<strong>Shop stock records · Last checked "+esc(stamp)+"</strong><div style='margin-top:10px;display:grid;gap:8px'>"+matches.map(x=>"<div style='padding:10px;border:1px solid #4b432e;border-radius:8px'><b>"+esc(x.shop_name)+"</b><br><span style='color:#b9b09d'>"+esc(x.shop_area||x.shop_address||"")+"</span><br><span style='color:#e7ca86'>"+esc(x.quantity)+" "+esc(x.quantity_unit||"BTL")+"</span></div>").join("")+"</div><p style='margin:10px 0 0'>Stock can change; call the licensed shop before visiting.</p>";
 }
@@ -80,14 +80,14 @@ async function loadVerifiedCatalogue(){
   if(Array.isArray(c.brands)&&c.brands.length){
    const categoryNames=new Map((c.categories||[]).map(x=>[x.id,x.name]));
    const sizeMap=new Map();
-   (c.brand_sizes||[]).forEach(x=>{if(!sizeMap.has(x.brand_id))sizeMap.set(x.brand_id,[]);sizeMap.get(x.brand_id).push(x.label)});
-   products=c.brands.map(b=>({id:b.id,name:b.display_name||b.name,cat:categoryNames.get(b.category_id)||"Other",tone:"amber",sizes:[...new Set(sizeMap.get(b.id)||[])]}));
-   cats=["All",...(c.categories||[]).map(x=>x.name)];
+   (c.brand_sizes||[]).forEach(x=>{if(!sizeMap.has(x.brand_id))sizeMap.set(x.brand_id,[]);sizeMap.get(x.brand_id).push({label:x.label,rsp:x.rsp})});
+   products=c.brands.map(b=>({id:b.id,name:b.display_name||b.name,cat:categoryNames.get(b.category_id)||"Other",tone:"amber",sizes:[...new Map((sizeMap.get(b.id)||[]).map(x=>[x.label,x])).values()]}));
+   cats=["All",...(c.categories||[]).filter(cat=>c.brands.some(b=>b.category_id===cat.id)).map(x=>x.name)];
    liveCatalogue=true;
    $("catalogStatus").innerHTML="<strong>Verified catalogue data</strong><br>Showing only brands and pack sizes marked verified in the backend. Stock availability is shown separately with its last checked time.";
    renderCats();render();
   }
-  stockData=payload.stock||stockData;
+  stockData=payload.stock||stockData;if(chosen)showDetail();
  }catch(err){
   $("catalogStatus").innerHTML="<strong>Preview catalogue</strong><br>Live verified catalogue could not be loaded. Illustrative examples are shown instead; no shop stock is claimed.";
  }
