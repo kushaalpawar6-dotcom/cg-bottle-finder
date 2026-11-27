@@ -60,7 +60,7 @@ function showDetail(){
 }
 $("categories").addEventListener("click",e=>{const b=e.target.closest("[data-cat]");if(!b)return;category=b.dataset.cat;renderCats();render()});
 $("search").addEventListener("input",render);
-catalog.addEventListener("click",e=>{const b=e.target.closest("[data-id]");if(!b)return;chosen=products.find(p=>String(p.id)===b.dataset.id);chosenSize="";showDetail();$("detail").scrollIntoView({behavior:"smooth",block:"nearest"})});
+catalog.addEventListener("click",e=>{const b=e.target.closest("[data-id]");if(!b)return;chosen=products.find(p=>String(p.id)===b.dataset.id);chosenSize="";showDetail();$("sizes").scrollIntoView({behavior:"smooth",block:"center"})});
 $("sizes").addEventListener("click",e=>{const b=e.target.closest("[data-size]");if(!b)return;chosenSize=b.dataset.size;showDetail()});
 $("apply").addEventListener("click",()=>{renderCats();render();if(chosen){if(!productsInDistrict().some(p=>String(p.id)===String(chosen.id))){chosen=null;chosenSize="";$("detail").classList.remove("show")}else{chosenSize="";showDetail()}}});
 $("district").addEventListener("change",()=>{const d=locationData.districts.find(x=>x.name===$("district").value),areas=[...new Set(locationData.shops.filter(s=>!d||s.district_id===d.id).map(s=>s.area).filter(Boolean))].sort();$("area").innerHTML=["All areas",...areas].map(a=>"<option>"+esc(a)+"</option>").join("");$("area").value="All areas";chosen=null;chosenSize="";$("detail").classList.remove("show");renderCats();render()});
