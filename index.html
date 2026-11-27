@@ -51,11 +51,13 @@ function showDetail(){
  const districtItems=selectedAreaStockItems().filter(x=>String(x.brand_id)===String(chosen.id));
  const sizeLabels=[...new Set(districtItems.map(x=>x.bottle_size_label))];
  $("sizes").innerHTML=sizeLabels.length?sizeLabels.map(label=>{const price=(chosen.sizes.find(s=>(typeof s==="string"?s:s.label)===label)||{}).rsp;return '<button class="size '+(chosenSize===label?'active':'')+'" data-size="'+esc(label)+'">'+esc(label)+(price!=null?' · ₹'+esc(price):'')+'</button>'}).join(""):'<span class="status">Selected area mein is brand ka stock available nahi hai.</span>';
- if(!chosenSize){$("availableAt").innerHTML="";const stamp=stockData.source_updated_label||(stockData.checked_at?new Date(stockData.checked_at).toLocaleString("en-IN"):"time unavailable"),fetched=stockData.checked_at?new Date(stockData.checked_at).toLocaleString("en-IN"):"not recorded";$("stockStatus").innerHTML="<strong>Official stock updated as on "+esc(stamp)+"</strong><br><small>Fetched by CG Bottle Finder: "+esc(fetched)+"</small><p style=\"margin:10px 0 0\">Pack size select karne ke baad available shops dikhengi.</p>";return}
+ if(!chosenSize){$("availableAt").innerHTML="";$("stockStatus").style.display="none";return}
  const matches=districtItems.filter(x=>norm(x.bottle_size_label)===norm(chosenSize));
  $("availableAt").innerHTML=matches.length?'<div class="available-title">Available at shops · '+esc(chosenSize)+'</div><div class="available-list">'+matches.map(x=>'<div class="available-shop"><b>'+esc(x.shop_name)+'</b><br><span>'+esc(x.shop_area||x.shop_address||"Area not provided")+' · '+esc(x.quantity)+' '+esc(x.quantity_unit||"BTL")+'</span></div>').join("")+'</div>':'<div class="available-title">Is size ke liye koi shop available nahi</div>';
- const stamp=stockData.source_updated_label||(stockData.checked_at?new Date(stockData.checked_at).toLocaleString("en-IN"):"time unavailable"),fetched=stockData.checked_at?new Date(stockData.checked_at).toLocaleString("en-IN"):"not recorded";
- $("stockStatus").innerHTML=matches.length?"<strong>Official stock updated as on "+esc(stamp)+"</strong><br><small>Fetched by CG Bottle Finder: "+esc(fetched)+"</small><p style='margin:10px 0 0'>Stock can change; call the licensed shop before visiting.</p>":"<strong>Is area mein is size ka positive stock nahi mila.</strong><br>Last official check: "+esc(stamp)+".";
+ const stamp=stockData.source_updated_label||(stockData.checked_at?new Date(stockData.checked_at).toLocaleString("en-IN"):"time unavailable");
+ $("stockStatus").innerHTML="<strong>Official stock updated as on "+esc(stamp)+"</strong><p style='margin:8px 0 0'>Stock can change; call the licensed shop before visiting.</p>";
+ $("stockStatus").style.display="block";
+ $("availableAt").prepend($("stockStatus"));
 }
 $("categories").addEventListener("click",e=>{const b=e.target.closest("[data-cat]");if(!b)return;category=b.dataset.cat;renderCats();render()});
 $("search").addEventListener("input",render);
