@@ -22,25 +22,77 @@ footer{border-top:1px solid #ffffff17;padding:24px 0 32px;color:#969184;font-siz
 <main class="wrap">
 <section class="hero"><div><div class="eyebrow">Discover · Browse · Locate</div><h1>Your bottle.<br><em>Your neighbourhood.</em></h1><p>A simple directory to browse bottle brands and pack sizes, then find licensed retail shop listings. Starting with Durg–Bhilai.</p></div><div class="hero-art" aria-hidden="true"><i></i><i></i><i></i></div></section>
 <section class="location"><div class="field"><label for="district">Choose district</label><select id="district"><option>Durg</option><option>Raipur</option><option>Rajnandgaon</option><option>Bilaspur</option><option>Other districts</option></select></div><div class="field"><label for="area">Choose city / area</label><select id="area"><option>Durg</option><option>Bhilai</option><option>Risali</option><option>Jamul</option><option>Ahiwara</option><option>Anda</option></select></div><button class="gold-btn" id="apply">Apply location ↗</button></section>
-<section class="section"><div class="section-top"><div><div class="eyebrow">Browse collection</div><h2>Choose a category</h2></div><p id="count">Demo catalogue</p></div><div class="status" style="margin:-3px 0 18px"><strong>Catalogue preview</strong><br>Brand names and pack sizes below are illustrative examples, not a verified current CSMCL price list or availability feed.</div><div class="categories" id="categories"></div><div class="catalog-tools"><div><div class="eyebrow">Bottle catalogue</div><h2 id="heading">Popular picks</h2></div><div class="field search"><label for="search">Find a brand</label><input id="search" type="search" placeholder="Search brand name…"></div></div><div class="grid" id="catalog"></div></section>
+<section class="section"><div class="section-top"><div><div class="eyebrow">Browse collection</div><h2>Choose a category</h2></div><p id="count">Demo catalogue</p></div><div class="status" id="catalogStatus" style="margin:-3px 0 18px"><strong>Catalogue preview</strong><br>Brand names and pack sizes below are illustrative examples, not a verified current CSMCL price list or availability feed.</div><div class="categories" id="categories"></div><div class="catalog-tools"><div><div class="eyebrow">Bottle catalogue</div><h2 id="heading">Popular picks</h2></div><div class="field search"><label for="search">Find a brand</label><input id="search" type="search" placeholder="Search brand name…"></div></div><div class="grid" id="catalog"></div></section>
 <section class="detail" id="detail" aria-live="polite"><div class="eyebrow">Selected bottle · Preview</div><h2 id="picked"></h2><p id="context"></p><div class="eyebrow">Choose pack size</div><div class="sizes" id="sizes"></div><div class="status" id="stockStatus"><strong>Live shop stock is not connected yet.</strong><br>No shop names, quantities or “available” claims are being shown. We will display them only after the official source is technically verified. Please do not use this preview to plan a purchase.</div></section>
 </main>
 <footer><div class="wrap foot"><div><strong>CG BOTTLE FINDER</strong><br>Independent information interface. Not an official government or retailer website.</div><div>Stock may change; confirm directly with the licensed retailer.<br><a href="https://excise.cg.nic.in/CSMCL/RetailServices/reports/rptStockforApp.aspx" target="_blank" rel="noopener">Official MANPASAND stock page ↗</a><br>For adults of legal purchasing age only.</div></div></footer>
 <script>
-const products=[
-["Royal Stag","Whisky","amber",["180 ml","375 ml","750 ml"]],["Blenders Pride","Whisky","dark",["180 ml","375 ml","750 ml"]],["Imperial Blue","Whisky","amber",["180 ml","375 ml","750 ml"]],["McDowell’s No.1","Whisky","green",["180 ml","375 ml","750 ml"]],["Officer’s Choice","Whisky","dark",["180 ml","375 ml","750 ml"]],["Kingfisher","Beer","green",["330 ml","500 ml","650 ml"]],["Tuborg","Beer","green",["330 ml","500 ml","650 ml"]],["Carlsberg","Beer","green",["330 ml","500 ml","650 ml"]],["Old Monk","Rum","dark",["180 ml","375 ml","750 ml"]],["McDowell’s Celebration","Rum","amber",["180 ml","375 ml","750 ml"]],["Magic Moments","Vodka","clear",["180 ml","375 ml","750 ml"]],["Smirnoff","Vodka","clear",["180 ml","375 ml","750 ml"]],["Breezer","Wine & RTD","clear",["275 ml"]],["Sula","Wine & RTD","dark",["375 ml","750 ml"]]
-].map(([name,cat,tone,sizes])=>({name,cat,tone,sizes}));
-const cats=["All","Whisky","Beer","Rum","Vodka","Wine & RTD","Country Liquor"];let category="All",chosen=null,chosenSize="";
+let products=[
+{name:"Royal Stag",cat:"Whisky",tone:"amber",sizes:["180 ml","375 ml","750 ml"]},
+{name:"Blenders Pride",cat:"Whisky",tone:"dark",sizes:["180 ml","375 ml","750 ml"]},
+{name:"Imperial Blue",cat:"Whisky",tone:"amber",sizes:["180 ml","375 ml","750 ml"]},
+{name:"Kingfisher",cat:"Beer",tone:"green",sizes:["330 ml","500 ml","650 ml"]},
+{name:"Tuborg",cat:"Beer",tone:"green",sizes:["330 ml","500 ml","650 ml"]},
+{name:"Old Monk",cat:"Rum",tone:"dark",sizes:["180 ml","375 ml","750 ml"]},
+{name:"Magic Moments",cat:"Vodka",tone:"clear",sizes:["180 ml","375 ml","750 ml"]},
+{name:"Sula",cat:"Wine & RTD",tone:"dark",sizes:["375 ml","750 ml"]}
+];
+let cats=["All","Whisky","Beer","Rum","Vodka","Wine & RTD","Country Liquor"];
+let category="All",chosen=null,chosenSize="",liveCatalogue=false;
+let stockData={items:[],status:"not_connected",checked_at:null};
 const $=id=>document.getElementById(id),catalog=$("catalog");
-function renderCats(){$("categories").innerHTML=cats.map(c=>'<button class="cat '+(c===category?'active':'')+'" data-cat="'+c+'">'+c+'</button>').join("")}
-function render(){const q=$("search").value.trim().toLowerCase();const list=products.filter(p=>(category==="All"||p.cat===category)&&p.name.toLowerCase().includes(q));$("heading").textContent=category==="All"?"Popular picks":category;$("count").textContent=list.length+" demo brands";catalog.innerHTML=list.length?list.map(p=>'<button class="card" data-name="'+p.name.replace(/"/g,"&quot;")+'" data-tone="'+p.tone+'"><div class="visual"><div class="bottle" data-label="'+p.name.toUpperCase()+'"></div></div><div class="info"><small>'+p.cat+'</small><h3>'+p.name+'</h3><p>'+p.sizes.join(" · ")+'</p></div></button>').join(""):'<div class="empty">No matching brands. Try another search.</div>'}
-function showDetail(){if(!chosen)return;$("detail").classList.add("show");$("picked").textContent=chosen.name;$("context").textContent=chosen.cat+" · "+$("area").value+", "+$("district").value;$("sizes").innerHTML=chosen.sizes.map(s=>'<button class="size '+(chosenSize===s?'active':'')+'" data-size="'+s+'">'+s+'</button>').join("");$("stockStatus").innerHTML=chosenSize?'<strong>Selected: '+chosenSize+'. Live stock not connected.</strong><br>This is a catalogue preview only. Shop availability and quantities will appear only after official stock data is verified.':'<strong>Live shop stock is not connected yet.</strong><br>No shop names, quantities or “available” claims are being shown. We will display them only after the official source is technically verified.';}
+function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function renderCats(){$("categories").innerHTML=cats.map(c=>'<button class="cat '+(c===category?'active':'')+'" data-cat="'+esc(c)+'">'+esc(c)+'</button>').join("")}
+function render(){
+ const q=$("search").value.trim().toLowerCase();
+ const list=products.filter(p=>(category==="All"||p.cat===category)&&p.name.toLowerCase().includes(q));
+ $("heading").textContent=category==="All"?"Popular picks":category;
+ $("count").textContent=list.length+(liveCatalogue?" verified brands":" demo brands");
+ catalog.innerHTML=list.length?list.map(p=>'<button class="card" data-id="'+esc(p.id||p.name)+'" data-tone="'+esc(p.tone||"amber")+'"><div class="visual"><div class="bottle" data-label="'+esc(p.name.toUpperCase())+'"></div></div><div class="info"><small>'+esc(p.cat)+'</small><h3>'+esc(p.name)+'</h3><p>'+p.sizes.map(esc).join(" · ")+'</p></div></button>').join(""):'<div class="empty">No matching brands. Try another search.</div>';
+}
+function showDetail(){
+ if(!chosen)return;
+ $("detail").classList.add("show");
+ $("picked").textContent=chosen.name;
+ $("context").textContent=chosen.cat+" · "+$("area").value+", "+$("district").value;
+ $("sizes").innerHTML=chosen.sizes.length?chosen.sizes.map(s=>'<button class="size '+(chosenSize===s?'active':'')+'" data-size="'+esc(s)+'">'+esc(s)+'</button>').join(""):'<span class="status">Verified pack-size data is not available for this brand yet.</span>';
+ if(!chosenSize){$("stockStatus").innerHTML="<strong>Choose a pack size.</strong><br>Shop listings appear only when a matching official stock record exists.";return}
+ if(!liveCatalogue||stockData.status!=="success"){$("stockStatus").innerHTML="<strong>Live shop stock is not connected yet.</strong><br>No shop availability is being claimed. Official stock feed is still awaiting verification.";return}
+ const matches=stockData.items.filter(x=>String(x.brand_id)===String(chosen.id)&&x.bottle_size_label===chosenSize&&(!$("area").value||!x.shop_area||x.shop_area.toLowerCase().includes($("area").value.toLowerCase())));
+ const stamp=stockData.checked_at?new Date(stockData.checked_at).toLocaleString("en-IN"):"time unavailable";
+ if(!matches.length){$("stockStatus").innerHTML="<strong>No matching shop stock record was returned.</strong><br>Last official check: "+esc(stamp)+". This does not guarantee the shop is out of stock; confirm with the retailer.";return}
+ $("stockStatus").innerHTML="<strong>Shop stock records · Last checked "+esc(stamp)+"</strong><div style='margin-top:10px;display:grid;gap:8px'>"+matches.map(x=>"<div style='padding:10px;border:1px solid #4b432e;border-radius:8px'><b>"+esc(x.shop_name)+"</b><br><span style='color:#b9b09d'>"+esc(x.shop_area||x.shop_address||"")+"</span><br><span style='color:#e7ca86'>"+esc(x.quantity)+" "+esc(x.quantity_unit||"BTL")+"</span></div>").join("")+"</div><p style='margin:10px 0 0'>Stock can change; call the licensed shop before visiting.</p>";
+}
 $("categories").addEventListener("click",e=>{const b=e.target.closest("[data-cat]");if(!b)return;category=b.dataset.cat;renderCats();render()});
 $("search").addEventListener("input",render);
-catalog.addEventListener("click",e=>{const b=e.target.closest("[data-name]");if(!b)return;chosen=products.find(p=>p.name===b.dataset.name);chosenSize="";showDetail();$("detail").scrollIntoView({behavior:"smooth",block:"nearest"})});
+catalog.addEventListener("click",e=>{const b=e.target.closest("[data-id]");if(!b)return;chosen=products.find(p=>String(p.id||p.name)===b.dataset.id);chosenSize="";showDetail();$("detail").scrollIntoView({behavior:"smooth",block:"nearest"})});
 $("sizes").addEventListener("click",e=>{const b=e.target.closest("[data-size]");if(!b)return;chosenSize=b.dataset.size;showDetail()});
-$("apply").addEventListener("click",()=>{if(chosen)showDetail();else{$("count").textContent="Location selected: "+$("area").value+", "+$("district").value}});
-$("district").addEventListener("change",()=>{const areas={Durg:["Durg","Bhilai","Risali","Jamul","Ahiwara","Anda"],Raipur:["Raipur","Other"],Rajnandgaon:["Rajnandgaon","Other"],Bilaspur:["Bilaspur","Other"]};$("area").innerHTML=(areas[$("district").value]||["All areas","Other"]).map(a=>'<option>'+a+'</option>').join("")});
+$("apply").addEventListener("click",()=>{if(chosen)showDetail();else $("count").textContent="Location selected: "+$("area").value+", "+$("district").value});
+$("district").addEventListener("change",()=>{const areas={Durg:["Durg","Bhilai","Risali","Jamul","Ahiwara","Anda"],Raipur:["Raipur","Other"],Rajnandgaon:["Rajnandgaon","Other"],Bilaspur:["Bilaspur","Other"]};$("area").innerHTML=(areas[$("district").value]||["All areas","Other"]).map(a=>"<option>"+esc(a)+"</option>").join("")});
 renderCats();render();
+async function loadVerifiedCatalogue(){
+ try{
+  const response=await fetch("https://iotmfkkrvpgmdvyovphh.supabase.co/functions/v1/public-catalogue");
+  if(!response.ok)throw new Error("Catalogue endpoint unavailable");
+  const payload=await response.json();
+  if(payload.error)throw new Error(payload.error);
+  const c=payload.catalogue||{};
+  if(Array.isArray(c.brands)&&c.brands.length){
+   const categoryNames=new Map((c.categories||[]).map(x=>[x.id,x.name]));
+   const sizeMap=new Map();
+   (c.brand_sizes||[]).forEach(x=>{if(!sizeMap.has(x.brand_id))sizeMap.set(x.brand_id,[]);sizeMap.get(x.brand_id).push(x.label)});
+   products=c.brands.map(b=>({id:b.id,name:b.display_name||b.name,cat:categoryNames.get(b.category_id)||"Other",tone:"amber",sizes:[...new Set(sizeMap.get(b.id)||[])]}));
+   cats=["All",...(c.categories||[]).map(x=>x.name)];
+   liveCatalogue=true;
+   $("catalogStatus").innerHTML="<strong>Verified catalogue data</strong><br>Showing only brands and pack sizes marked verified in the backend. Stock availability is shown separately with its last checked time.";
+   renderCats();render();
+  }
+  stockData=payload.stock||stockData;
+ }catch(err){
+  $("catalogStatus").innerHTML="<strong>Preview catalogue</strong><br>Live verified catalogue could not be loaded. Illustrative examples are shown instead; no shop stock is claimed.";
+ }
+}
+loadVerifiedCatalogue();
+
 </script>
 </body></html>
