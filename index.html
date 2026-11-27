@@ -32,7 +32,8 @@ const $=id=>document.getElementById(id),catalog=$("catalog");
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function qtyPositive(x){const n=Number(String(x.quantity??"").replace(/,/g,"").trim());return Number.isFinite(n)&&n>0}
 function districtStockItems(){return stockData.items.filter(x=>x.shop_district_name===$("district").value&&qtyPositive(x))}
-function norm(v){return String(v??"").trim().toLowerCase().replace(/\\s+/g,"")}\nfunction selectedAreaStockItems(){const area=norm($("area").value);return districtStockItems().filter(x=>area==="allareas"||norm(x.shop_area)===area)}
+function norm(v){return String(v??"").trim().toLowerCase().replace(/\s+/g,"")}
+function selectedAreaStockItems(){const area=norm($("area").value);return districtStockItems().filter(x=>area==="allareas"||norm(x.shop_area)===area)}
 function productsInDistrict(){if(!liveCatalogue||stockData.status!=="success")return[];const ids=new Set(selectedAreaStockItems().map(x=>String(x.brand_id)));return products.filter(p=>ids.has(String(p.id)))}
 function renderCats(){const available=productsInDistrict();const validCats=["All",...new Set(available.map(p=>p.cat))];if(!validCats.includes(category))category="All";cats=validCats;$("categories").innerHTML=cats.map(c=>'<button class="cat '+(c===category?'active':'')+'" data-cat="'+esc(c)+'">'+esc(c)+'</button>').join("")}
 function render(){
